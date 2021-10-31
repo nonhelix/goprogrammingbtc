@@ -10,7 +10,7 @@ type FieldElement struct {
 	prime *big.Int
 }
 
-func Add(x, y FieldElement) (z FieldElement) {
+func Add(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
 		z := FieldElement{big.NewInt(int64(0)), x.prime}
 		z.num.Add(x.num, y.num)
@@ -19,11 +19,11 @@ func Add(x, y FieldElement) (z FieldElement) {
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
 		fmt.Println("raise error, different prime")
-		return z
+		return FieldElement{nil, nil}
 	}
 }
 
-func Sub(x, y FieldElement) (z FieldElement) {
+func Sub(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
 		z := FieldElement{big.NewInt(int64(0)), x.prime}
 		z.num.Sub(x.num, y.num)
@@ -32,11 +32,11 @@ func Sub(x, y FieldElement) (z FieldElement) {
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
 		fmt.Println("raise error, different prime")
-		return z
+		return FieldElement{nil, nil}
 	}
 }
 
-func Mul(x, y FieldElement) (z FieldElement) {
+func Mul(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
 		z := FieldElement{big.NewInt(int64(0)), x.prime}
 		z.num.Mul(x.num, y.num)
@@ -45,17 +45,17 @@ func Mul(x, y FieldElement) (z FieldElement) {
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
 		fmt.Println("raise error, different prime")
-		return z
+		return FieldElement{nil, nil}
 	}
 }
 
-func Pow(x FieldElement, n *big.Int) (z FieldElement) {
-	z = FieldElement{big.NewInt(int64(0)), x.prime}
+func Pow(x FieldElement, n *big.Int) FieldElement {
+	z := FieldElement{big.NewInt(int64(0)), x.prime}
 	z.num.Exp(x.num, n, x.prime)
 	return z
 }
 
-func Div(x, y FieldElement) (z FieldElement) {
+func Div(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
 		z := FieldElement{big.NewInt(int64(0)), x.prime}
 		e := FieldElement{big.NewInt(int64(0)), x.prime}
@@ -67,7 +67,7 @@ func Div(x, y FieldElement) (z FieldElement) {
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
 		fmt.Println("raise error, different prime")
-		return z
+		return FieldElement{nil, nil}
 	}
 }
 
@@ -99,57 +99,34 @@ func AddPoint(p1, p2 Point) (p3 Point) {
 	}
 	if p1.x != p2.x {
 		// s = (y2-y1)/(x2-x1)
-		// iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiinitialize p3
-		fmt.Println("p3.x.num", p3.x.num)
-
-		fmt.Println("p3.y.num", p3.y.num)
-		fmt.Println("p1", p1)
-		fmt.Println("p1.x.num", p1.x.num)
-		//TODO  WARNING: why b is 54??? its pointer???
-		//	fmt.Println("p3.b.num", p3.b.num)
-		// initialize s. as a fieldelement, s can only be initialized as exited fieldelement.
 		s := Div(Sub(p2.y, p1.y), Sub(p2.x, p1.x))
 		fmt.Println("s", s.num)
-		//fmt.Println("s======", s.num, s.prime)
 		//x3 =s2 –x1 –x2
-		///	var x3 FieldElement
 		x3 := Sub(Sub(Mul(s, s), p1.x), p2.x)
-		//	fmt.Println("p3.x.num=", p3.x.num)
 		//y3 = s(x1 – x3) – y1
-		///	var y3 FieldElement
-		//	p3.x = FieldElement{p3.x.num, p3.x.prime}
-		//	fmt.Println("p3.x.num ============", p3.x.num)
 		y3 := Sub(Mul(Sub(p1.x, x3), s), p1.y)
-		//p3.y = FieldElement{p3.y.num, p3.y.prime}
 		p3 = Point{a: p3.a, b: p3.b, x: x3, y: y3}
 		return p3
 	}
 
-	//	// P1 == P2 and y = 0
-	//	if p1 == p2 && p1.y.num == nil {
-	//		return Point{p1.a, p1.b, InfFieldElement, InfFieldElement}
-	//	}
-	//	// P1 == P2
-	//	if p1 == p2 {
-	//		// s = (3x12 + a)/(2y1)
-	//		s := p1.x
-	//		// initiazed 2y1
-	//		twoy1 := p1.x
-	//		twoy1.Add(p1.y, p1.y)
-	//		s.Mul(p1.x, p1.x).Add(s, s).Add(s, s).Add(s, p1.a).Div(s, twoy1)
-	//
-	//		// x3 = s2 – 2x1
-	//		x3 := p1.x
-	//		twox1 := p1.x
-	//		twox1.Add(p1.x, p1.x)
-	//		x3.Mul(s, s).Sub(x3, twox1)
-	//
-	//		// y3 = s(x1 – x3) – y1
-	//
-	//		y3 := p1.x
-	//		y3.Sub(p1.x, x3).Mul(y3, s).Sub(y3, p1.y)
-	//		return Point{p1.a, p1.b, x3, y3}
-	//	}
+	// P1 == P2 and y = 0
+	if p1 == p2 && p1.y.num == nil {
+		return Point{p1.a, p1.b, InfFieldElement, InfFieldElement}
+	}
+	// P1 == P2
+	if p1 == p2 {
+		// s = (3x12 + a)/(2y1)
+		s := Div(Add(Add(Mul(p1.x, p1.x), Mul(p1.x, p1.x)), Mul(p1.x, p1.x)), Add(p1.y, p1.y))
+
+		// x3 = s2 – 2x1
+		x3 := Sub(Mul(s, s), Add(p1.x, p1.x))
+
+		// y3 = s(x1 – x3) – y1
+
+		y3 := Sub(Mul(Sub(p1.x, x3), s), p1.y)
+		p3 = Point{a: p3.a, b: p3.b, x: x3, y: y3}
+		return p3
+	}
 	return
 }
 func main() {
@@ -177,19 +154,12 @@ func main() {
 	y4 := FieldElement{big98, big223}
 	x5 := FieldElement{big76, big223}
 	y5 := FieldElement{big66, big223}
-	//	fmt.Println(s.Add(s, x1).num)
 	p4 := Point{a, b, x4, y4}
 	p5 := Point{a, b, x5, y5}
-	//	fmt.Println("when use new func:", t)
-	//	fmt.Println("print fieldelement directly:", a)
-	//	fmt.Println("p1.b.num", p1.b.num)
-	//	fmt.Println("print p2 directly", p2)
-
 	p3 := AddPoint(p1, p2)
 	p6 := AddPoint(p4, p5)
 	fmt.Println("p3.x.num:", p3.x.num)
 	fmt.Println("p3.y.num:", p3.y.num)
 	fmt.Println("p6.x.num:", p6.x.num)
 	fmt.Println("p6.y.num:", p6.y.num)
-	//	fmt.Println("p3.y.num:", p3.y.num)
 }

@@ -1,144 +1,199 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"math"
 	"math/big"
 )
 
-//Page 4.
 type FieldElement struct {
-	num   int
-	prime int
+	num   *big.Int
+	prime *big.Int
 }
 
-// TODO: check the valdiation of FieldElement, check the big int, Only the exp had big int compatiable now.
-
-func add(x, y FieldElement) (FieldElement, error) {
+func (z FieldElement) Add(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
-		// modulo
-		a := (x.num + y.num) % x.prime
-		z := FieldElement{a, x.prime}
-		return z, nil
+		z.num.Mod(x.num.Add(x.num, y.num), x.prime)
+		z.prime = x.prime
+		return z
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
-		return FieldElement{-1, -1}, errors.New("can't work with two numbers in different Fields")
+		fmt.Println("raise error, different prime")
+		return z
 	}
 }
 
-func sub(x, y FieldElement) (FieldElement, error) {
+func (z FieldElement) Sub(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
-		// modulo
-		a := (x.num - y.num) % x.prime
-		z := FieldElement{a, x.prime}
-		return z, nil
+		z.num.Mod(x.num.Sub(x.num, y.num), x.prime)
+		z.prime = x.prime
+		return z
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
-		return FieldElement{-1, -1}, errors.New("can't work with two numbers in different Fields")
+		fmt.Println("raise error, different prime")
+		return z
 	}
 }
 
-func mul(x, y FieldElement) (FieldElement, error) {
+func (z FieldElement) Mul(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
-		// modulo
-		a := (x.num * y.num) % x.prime
-		z := FieldElement{a, x.prime}
-		return z, nil
+		z.num.Mod(x.num.Mul(x.num, y.num), x.prime)
+		z.prime = x.prime
+		return z
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
-		return FieldElement{-1, -1}, errors.New("can't work with two numbers in different Fields")
+		fmt.Println("raise error, different prime")
+		return z
 	}
 }
 
-// power had negative issues and big int issues TODO TODO TODO.
-
-func pow(x FieldElement, exponent int) (FieldElement, error) {
-	// modulo, in case exponenet is negative.
-	e := exponent % (x.prime - 1)
-	big_a := big.NewInt(int64(x.num))
-	big_e := big.NewInt(int64(e))
-	big_p := big.NewInt(int64(x.prime))
-	big_a.Exp(big_a, big_e, big_p)
-	small_a := int(big_a.Int64())
-	z := FieldElement{small_a, x.prime}
-	return z, nil
+func (z FieldElement) Pow(x FieldElement, n *big.Int) FieldElement {
+	z.num.Exp(x.num, n, x.prime)
+	z.prime = x.prime
+	return z
 }
 
-func trueDiv(x, y FieldElement) (FieldElement, error) {
+func (z FieldElement) Div(x, y FieldElement) FieldElement {
 	if x.prime == y.prime {
-		// modulo
-		y_fermat := math.Pow(float64(y.num), float64(y.prime-2))
-		a := (x.num * int(y_fermat)) % x.prime
-		z := FieldElement{a, x.prime}
-		return z, nil
+		z.num.Exp(y.num, y.num.Sub(x.prime, big.NewInt(int64(2))), nil).Mul(z.num, x.num).Mod(z.num, x.prime)
+		z.prime = x.prime
+		return z
 	} else {
 		//TODO: check how to return illegal fieldelement, not {-1,-1}
-		return FieldElement{-1, -1}, errors.New("can't work with two numbers in different Fields")
+		fmt.Println("raise error, different prime")
+		return z
 	}
 }
-
-//point
 
 type Point struct {
-	a int
-	b int
-	x int
-	y int
+	a FieldElement
+	b FieldElement
+	x FieldElement
+	y FieldElement
 }
 
-// y2 = x3 + 5x + 7
-func (p Point) onCurve() bool {
-	return p.y*p.y == int(math.Pow(float64(p.x), 3))+5*p.x+7
-}
+// y2 = x3  + 7 TODO make the validation.
+//func (p PointFF) onCurveFF() bool {
+//	return p.y.Pow(p.y, 2) == p.x.Pow(p.x, 3)
+//}
 
-func (p1 Point) addPoint(p2 Point) (p3 Point) {
+func (p1 Point) AddPoint(p2 Point) (p3 Point) {
 	//TODO check onCurve if both are Inf are also OK.(pg.34) and check sameCurve
 
-	// same x and not same y case
+	// same x and not same y case TODO check if p1.num > p1.prime is legal?
+	InfFieldElement := FieldElement{nil, p1.x.prime}
 	if p1.x == p2.x && p1.y != p2.y {
-		return Point{p1.a, p1.b, int(math.Inf(1)), int(math.Inf(1))}
+		return Point{p1.a, p1.b, InfFieldElement, InfFieldElement}
 	}
 	// Inf case TODO Inf is not big enough. Maybe all of them shouble be bytes?
-	if p1.x == int(math.Inf(1)) {
+	if p1.x.num == nil {
 		return p2
-	} else if p2.x == int(math.Inf(1)) {
+	} else if p2.x.num == nil {
 		return p1
 	}
-	//x not equal
 	if p1.x != p2.x {
-		s := (p2.y - p1.y) / (p2.x - p1.x)
-		x := s*s - p1.x - p2.x
-		y := s*(p1.x-x) - p1.y
-		return Point{p1.a, p1.b, x, y}
+		// s = (y2-y1)/(x2-x1)
+		// initialize p3
+		p3 = p1
+		fmt.Println("p3.x.num", p3.x.num)
+
+		fmt.Println("p3.y.num", p3.y.num)
+		fmt.Println("p3.a.num", p3.a.num)
+		//TODO  WARNING: why b is 54??? its pointer???
+		fmt.Println("p3.b.num", p3.b.num)
+		// initialize s. as a fieldelement, s can only be initialized as exited fieldelement.
+		s := p1.x
+		s.Sub(p2.y, p1.y)
+		x2subx1 := p1.x
+		x2subx1.Sub(p2.x, p1.x)
+		s.Div(s, x2subx1)
+		//fmt.Println("s======", s.num, s.prime)
+		//x3 =s2 –x1 –x2
+		///	var x3 FieldElement
+		p3.x.Mul(s, s).Sub(p3.x, p1.x).Sub(p3.x, p2.x)
+		fmt.Println("p3.x.num=", p3.x.num)
+		//y3 = s(x1 – x3) – y1
+		///	var y3 FieldElement
+		p3.x = FieldElement{p3.x.num, p3.x.prime}
+		fmt.Println("p3.x.num ============", p3.x.num)
+		p3.y.Sub(p1.x, p3.x).Mul(p3.y, s).Sub(p3.y, p1.y)
+		p3.y = FieldElement{p3.y.num, p3.y.prime}
+		p3 = Point{a: p3.a, b: p3.b, x: p3.x, y: p3.y}
+		fmt.Println("p3.x.num==================", p3.x.num)
+		return p3
 	}
 
 	// P1 == P2 and y = 0
-	if p1 == p2 && p1.y == 0 {
-		return Point{p1.a, p1.b, int(math.Inf(1)), int(math.Inf(1))}
+	if p1 == p2 && p1.y.num == nil {
+		return Point{p1.a, p1.b, InfFieldElement, InfFieldElement}
 	}
 	// P1 == P2
 	if p1 == p2 {
-		s := (3*(p1.x*p1.x) + p1.a) / (2 * p1.y)
-		x := s*s - 2*p1.x
-		y := s*(p1.x-x) - p1.y
-		return Point{p1.a, p1.b, x, y}
+		// s = (3x12 + a)/(2y1)
+		s := p1.x
+		// initiazed 2y1
+		twoy1 := p1.x
+		twoy1.Add(p1.y, p1.y)
+		s.Mul(p1.x, p1.x).Add(s, s).Add(s, s).Add(s, p1.a).Div(s, twoy1)
+
+		// x3 = s2 – 2x1
+		x3 := p1.x
+		twox1 := p1.x
+		twox1.Add(p1.x, p1.x)
+		x3.Mul(s, s).Sub(x3, twox1)
+
+		// y3 = s(x1 – x3) – y1
+
+		y3 := p1.x
+		y3.Sub(p1.x, x3).Mul(y3, s).Sub(y3, p1.y)
+		return Point{p1.a, p1.b, x3, y3}
 	}
 	return
 }
 
+func (p1 Point) AddPointtest(p2 Point) (p3 Point) {
+
+	// s = (y2-y1)/(x2-x1)
+	p3 = p1
+	// initialize s. as a fieldelement, s can only be initialized as exited fieldelement.
+	s := p1.x
+	s.Sub(p2.y, p1.y)
+	x2subx1 := p1.x
+	x2subx1.Sub(p2.x, p1.x)
+	s.Div(s, x2subx1)
+	//fmt.Println(s)
+	//x3 =s2 –x1 –x2
+	///	var x3 FieldElement
+	p3.x.Mul(s, s).Sub(p3.x, p1.x).Sub(p3.x, p2.x)
+	//y3 = s(x1 – x3) – y1
+	///	var y3 FieldElement
+
+	p3.y.Sub(p1.x, p3.x).Mul(p3.y, s).Sub(p3.y, p1.y)
+	return Point{p3.a, p3.b, p3.x, p3.y}
+}
 func main() {
-	//a := FieldElement{17, 31}
-	//b := FieldElement{7, 19}
-	//c, _ := pow(a, -3)
-	//fmt.Println(c)
+	big0 := big.NewInt(int64(0))
+	big223 := big.NewInt(int64(223))
+	big7 := big.NewInt(int64(7))
+	big47 := big.NewInt(int64(47))
+	big71 := big.NewInt(int64(71))
+	big17 := big.NewInt(int64(17))
+	big56 := big.NewInt(int64(56))
 
-	a := Point{5, 7, -1, 0}
-
-	b := Point{5, 7, -1, 0}
-	//	c := Point{5, 7, 18, 77}
-	//	d := Point{int(math.Inf(1)), int(math.Inf(1)), 5, 7}
-
-	fmt.Println(a.addPoint(b))
-
+	a := FieldElement{big0, big223}
+	b := FieldElement{big7, big223}
+	x1 := FieldElement{big47, big223}
+	y1 := FieldElement{big71, big223}
+	x2 := FieldElement{big17, big223}
+	y2 := FieldElement{big56, big223}
+	p1 := Point{a, b, x1, y1}
+	p2 := Point{a, b, x2, y2}
+	t := new(FieldElement)
+	//	fmt.Println(s.Add(s, x1).num)
+	fmt.Println("when use new func:", t)
+	fmt.Println("print fieldelement directly:", a)
+	fmt.Println("p1.b.num", p1.b.num)
+	fmt.Println("print p2 directly", p2)
+	p3 := p1.AddPoint(p2)
+	fmt.Println("p3.x.num:", p3.x.num)
+	//	fmt.Println("p3.y.num:", p3.y.num)
 }

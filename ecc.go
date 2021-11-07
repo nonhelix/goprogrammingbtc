@@ -5,6 +5,23 @@ import (
 	"math/big"
 )
 
+// string form of the hex num for example.... :gx and gy
+var big2 = big.NewInt(int64(2))
+var big256 = big.NewInt(int64(256))
+var big32 = big.NewInt(int64(32))
+var big977 = big.NewInt(int64(977))
+
+//	var gxString = "0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+//	var gyString = "0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+//
+//	var gx = new(big.Int)
+//	var gy = new(big.Int)
+//var gx = new(big.Int)
+//var gy = new(big.Int)
+//fmt.Sscan(gx_string, gx)
+//fmt.Sscan(gy_string, gy)
+//G := Point{xxxxxxxxxxx,xxx.x.x.x.x.x.}
+
 type FieldElement struct {
 	num   *big.Int
 	prime *big.Int
@@ -82,6 +99,10 @@ type Point struct {
 //func (p PointFF) onCurveFF() bool {
 //	return p.y.Pow(p.y, 2) == p.x.Pow(p.x, 3)
 //}
+type S256Point struct {
+	x FieldElement
+	y FieldElement
+}
 
 func AddPoint(p1, p2 Point) (p3 Point) {
 	//TODO check onCurve if both are Inf are also OK.(pg.34) and check sameCurve
@@ -130,36 +151,58 @@ func AddPoint(p1, p2 Point) (p3 Point) {
 	return
 }
 func main() {
-	big0 := big.NewInt(int64(0))
-	big223 := big.NewInt(int64(223))
+	//	big0 := big.NewInt(int64(0))
+	//	big223 := big.NewInt(int64(223))
 	big7 := big.NewInt(int64(7))
-	big47 := big.NewInt(int64(47))
-	big71 := big.NewInt(int64(71))
-	big17 := big.NewInt(int64(17))
-	big56 := big.NewInt(int64(56))
+	big3 := big.NewInt(int64(3))
+	//	big47 := big.NewInt(int64(47))
+	//	big71 := big.NewInt(int64(71))
+	//	big17 := big.NewInt(int64(17))
+	//	big56 := big.NewInt(int64(56))
+	//
+	//	big143 := big.NewInt(int64(143))
+	//	big98 := big.NewInt(int64(98))
+	//	big76 := big.NewInt(int64(76))
+	//	big66 := big.NewInt(int64(66))
+	//	a := FieldElement{big0, big223}
+	//	b := FieldElement{big7, big223}
+	//	x1 := FieldElement{big47, big223}
+	//	y1 := FieldElement{big71, big223}
+	//	x2 := FieldElement{big17, big223}
+	//	y2 := FieldElement{big56, big223}
+	//	p1 := Point{a, b, x1, y1}
+	//	p2 := Point{a, b, x2, y2}
+	//	x4 := FieldElement{big143, big223}
+	//	y4 := FieldElement{big98, big223}
+	//	x5 := FieldElement{big76, big223}
+	//	y5 := FieldElement{big66, big223}
+	//	p4 := Point{a, b, x4, y4}
+	//	p5 := Point{a, b, x5, y5}
+	//	p3 := AddPoint(p1, p2)
+	//	p6 := AddPoint(p4, p5)
+	//	fmt.Println("p3.x.num:", p3.x.num)
+	//	fmt.Println("p3.y.num:", p3.y.num)
+	//	fmt.Println("p6.x.num:", p6.x.num)
+	//	fmt.Println("p6.y.num:", p6.y.num)
+	p := new(big.Int)
+	p.Exp(big2, big256, nil)
+	p32 := new(big.Int)
+	p32.Exp(big2, big32, nil)
+	p.Sub(p, p32)
+	p.Sub(p, big977)
 
-	big143 := big.NewInt(int64(143))
-	big98 := big.NewInt(int64(98))
-	big76 := big.NewInt(int64(76))
-	big66 := big.NewInt(int64(66))
-	a := FieldElement{big0, big223}
-	b := FieldElement{big7, big223}
-	x1 := FieldElement{big47, big223}
-	y1 := FieldElement{big71, big223}
-	x2 := FieldElement{big17, big223}
-	y2 := FieldElement{big56, big223}
-	p1 := Point{a, b, x1, y1}
-	p2 := Point{a, b, x2, y2}
-	x4 := FieldElement{big143, big223}
-	y4 := FieldElement{big98, big223}
-	x5 := FieldElement{big76, big223}
-	y5 := FieldElement{big66, big223}
-	p4 := Point{a, b, x4, y4}
-	p5 := Point{a, b, x5, y5}
-	p3 := AddPoint(p1, p2)
-	p6 := AddPoint(p4, p5)
-	fmt.Println("p3.x.num:", p3.x.num)
-	fmt.Println("p3.y.num:", p3.y.num)
-	fmt.Println("p6.x.num:", p6.x.num)
-	fmt.Println("p6.y.num:", p6.y.num)
+	var gxString = "0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"
+	var gyString = "0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+
+	var gx = new(big.Int)
+	var gy = new(big.Int)
+	fmt.Sscan(gxString, gx)
+	fmt.Sscan(gyString, gy)
+	gy.Mul(gy, gy)
+	gy.Mod(gy, p)
+	fmt.Println("gy", gy)
+	gx.Exp(gx, big3, nil)
+	gx.Add(gx, big7)
+	gx.Mod(gx, p)
+	fmt.Println("gx", gx)
 }

@@ -69,3 +69,28 @@ func TestExercise1_4(t *testing.T) {
 		t.Error("wrong res3", res3)
 	}
 }
+func TestExercise1_8(t *testing.T) {
+	prime := big.NewInt(int64(31))
+	x1 := FieldElement{big.NewInt(int64(3)), prime}
+	y1 := FieldElement{big.NewInt(int64(24)), prime}
+	res1 := x1.Div(y1)
+	ans1 := big.NewInt(int64(4))
+	if res1.num.Cmp(ans1) != 0 {
+		t.Error("wrong res1", res1)
+	}
+	x2 := FieldElement{big.NewInt(int64(17)), prime}
+	y2 := FieldElement{big.NewInt(int64(-3)), prime}
+	res2 := x2.Pow(y2.num)
+	ans2 := big.NewInt(int64(29))
+	if res2.num.Cmp(ans2) != 0 {
+		t.Error("wrong res2", res2)
+	}
+	x4 := FieldElement{big.NewInt(int64(4)), prime}
+	y4 := FieldElement{big.NewInt(int64(-4)), prime}
+	z4 := FieldElement{big.NewInt(int64(11)), prime}
+	res4 := x4.Pow(y4.num).Mul(z4)
+	ans4 := big.NewInt(int64(13))
+	if res4.num.Cmp(ans4) != 0 {
+		t.Error("wrong res4", res4)
+	}
+}

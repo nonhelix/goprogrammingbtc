@@ -48,7 +48,7 @@ func (x FieldElement) Div(y FieldElement) FieldElement {
 		panic("mismatched primes in fieldElement")
 	}
 	z := FieldElement{big.NewInt(0), x.prime}
-	z.num.Exp(y.num, big.NewInt(0).Sub(x.prime, big.NewInt(int64(2))), x.prime)
+	z.num.Exp(y.num, big.NewInt(0).Sub(x.prime, big.NewInt(2)), x.prime)
 	z.num.Mul(z.num, x.num)
 	z.num.Mod(z.num, x.prime)
 	return z
